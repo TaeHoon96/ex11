@@ -55,18 +55,25 @@
     <%! ObjectMapper mapper = new ObjectMapper(); %>
     <%! String answer = ""; %>
     <%
-        String prompt = request.getParameter("prompt");
-        if (prompt == null || prompt.isBlank()) {
-            prompt = "프롬프트가 없습니다";
+        String rawPrompt = request.getParameter("prompt");
+        if (rawPrompt == null || rawPrompt.isBlank()) {
+            rawPrompt = "프롬프트가 없습니다";
             answer = "프롬프트를 제대로 입력해주세요!";
         } else {
-            prompt += " no markdown, under 300 character, use korean language, nutshell please";
+            String command = request.getParameter("command");
+            if (command == null || command.isBlank()) {
+                command = "no markdown, under 300 character, use korean language, nutshell please";
+            }
+
+            String fullprompt = rawPrompt + " " + command;
+
             Map<String, List<Map<String, List<Map<String, String>>>>> geminiMap = new HashMap<>();
             List<Map<String, String>> parts = List.of(new HashMap<>());
-            parts.get(0).put("text", prompt);
+            parts.get(0).put("text", fullprompt);
             List<Map<String, List<Map<String, String>>>> contents = List.of(new HashMap<>());
             contents.get(0).put("parts", parts);
             geminiMap.put("contents", contents);
+
             HttpRequest httpRequest = HttpRequest.newBuilder()
                     .uri(URI.create("https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=%s".formatted(
                             dotenv.get("GEMINI_KEY")
@@ -86,12 +93,13 @@
     %>
     <form>
         <section class="title">
-            프롬프트 : <%= prompt %>
+            프롬프트 : <%= rawPrompt %>
         </section>
         <section>
             답변 : <%= answer %>
         </section>
         <input name="prompt" placeholder="프롬프트를 입력해주세요">
+        <input type="hidden" name="command" value="no markdown, under 300 character, use korean language, nutshell please">
         <button>제출</button>
     </form>
 </body>
